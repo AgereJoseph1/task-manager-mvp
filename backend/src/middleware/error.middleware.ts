@@ -1,19 +1,17 @@
 import { Request, Response, NextFunction } from 'express';
+import { AppError } from '../utils/errors';
 
-interface ApiError extends Error {
-  statusCode?: number;
-  code?: string;
-}
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export const errorHandler = (err: unknown, _req: Request, res: Response, _next: NextFunction) => {
+  let statusCode = 500;
+  let code = 'INTERNAL_SERVER_ERROR';
+  let message = 'Something went wrong';
 
-export const errorHandler = (
-  err: ApiError,
-  _req: Request,
-  res: Response,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  _next: NextFunction,
-) => {
-  const statusCode = err.statusCode || 500;
-  const code = err.code || 'INTERNAL_SERVER_ERROR';
+  if (err instanceof AppError) {
+    statusCode = err.statusCode;
+    code = err.code;
+    message = err.message;
+  }
 
   if (statusCode >= 500) {
     // eslint-disable-next-line no-console
@@ -22,7 +20,7 @@ export const errorHandler = (
 
   res.status(statusCode).json({
     error: {
-      message: err.message || 'Something went wrong',
+      message,
       code,
     },
   });
